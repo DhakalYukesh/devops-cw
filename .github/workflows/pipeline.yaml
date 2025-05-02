@@ -2,8 +2,8 @@ name: "Deploy to EC2 Instance"
 
 on:
   push:
-      branches:
-        - main
+    branches:
+      - main
 
 jobs:
   deploy:
@@ -30,16 +30,20 @@ jobs:
           touch ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
       
-      - name: "Put SSH Key in Docker file for Server Access"
+      - name: "Setup SSH Key for Server Access"
         run: |
-          touch pem.pem
-          echo $SSH_KEY64 | base64 -d > pem.pem && chmod 400 pem.pem
-          ssh-keygen -R $SERVER_IP
+          echo "$SSH_KEY64" | base64 -d > ssh_key.pem
+          chmod 400 ssh_key.pem
+          ls -la ssh_key.pem  # To verify file size and permissions
         env: 
           SSH_KEY64: ${{ secrets.SSH_KEY64 }}
 
+      - name: "Test SSH Connection"
+        run: ssh -v ubuntu@$SERVER_IP -i ssh_key.pem 'echo "Connection successful"'
+
       - name: "Docker Pull and Restart Docker"
         run: |
-          ssh -t ubuntu@$SERVER_IP -i pem.pem 'docker pull yukeshdhakal/devopscw'
-          ssh -t ubuntu@$SERVER_IP -i pem.pem 'docker stop yukesh-front && docker rm yukesh-front'
-          ssh -t ubuntu@$SERVER_IP -i pem.pem 'docker run --name yukesh-front -p 80:80 -d yukeshdhakal/devopscw'
+          ssh ubuntu@$SERVER_IP -i ssh_key.pem 'docker pull yukeshdhakal/devopscw'
+          ssh ubuntu@$SERVER_IP -i ssh_key.pem 'docker stop yukesh-front || true'
+          ssh ubuntu@$SERVER_IP -i ssh_key.pem 'docker rm yukesh-front || true'
+          ssh ubuntu@$SERVER_IP -i ssh_key.pem 'docker run --name yukesh-front -p 80:80 -d yukeshdhakal/devopscw'
