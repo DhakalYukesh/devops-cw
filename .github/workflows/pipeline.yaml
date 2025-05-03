@@ -38,8 +38,8 @@ jobs:
         env: 
           SSH_KEY64: ${{ secrets.SSH_KEY64 }}
 
-      # - name: "Test SSH Connection"
-      #   run: ssh -v ubuntu@$SERVER_IP -i ssh_key.pem 'echo "Connection successful"'
+      - name: "Test SSH Connection"
+        run: ssh -v ubuntu@$SERVER_IP -i ssh_key.pem 'echo "Connection successful"'
 
       - name: "Docker Pull and Restart Docker"
         run: |
