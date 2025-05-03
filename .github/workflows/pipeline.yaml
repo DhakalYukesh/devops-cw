@@ -40,6 +40,6 @@ jobs:
 
       - name: "Docker Pull and Restart Docker"
         run: |
-          ssh -o StrictHostKeyChecking=no -i pem.pem ubuntu@$SERVER_IP 'docker pull yukeshdhakal/devopscw'
-          ssh -o StrictHostKeyChecking=no -i pem.pem ubuntu@$SERVER_IP 'docker stop yukesh-front && docker rm yukesh-front'
-          ssh -o StrictHostKeyChecking=no -i pem.pem ubuntu@$SERVER_IP 'docker run --name yukesh-front -p 80:80 -d yukeshdhakal/devopscw'
+          ssh -t ubuntu@$SERVER_IP -i pem.pem 'docker pull yukeshdhakal/devopscw'
+          ssh -t ubuntu@$SERVER_IP -i pem.pem 'docker stop yukesh-front && docker rm yukesh-front'
+          ssh -t ubuntu@$SERVER_IP -i pem.pem 'docker run --name yukesh-front -p 80:80 -d yukeshdhakal/devopscw'
