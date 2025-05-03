@@ -1,9 +1,9 @@
-name: "Deploy to EC2 Instance"
+name: "Deploy to Server"
 
 on:
   push:
-    branches:
-      - main
+      branches:
+        - main
 
 jobs:
   deploy:
@@ -29,29 +29,17 @@ jobs:
           echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
           touch ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
-
-      - name: "Setup SSH Key for Server Access"
+      
+      - name: "Put SSH Key in Docker file for Server Access"
         run: |
-          # Decode key with extra error checking
-          echo "$SSH_KEY64" | base64 -d > ssh_key.pem || { echo "Base64 decoding failed!"; exit 1; }
-          chmod 400 ssh_key.pem
-          ls -la ssh_key.pem
-          file ssh_key.pem
-          # Better key validation that shows actual content
-          echo "First 4 lines of key (checking format):"
-          head -n 4 ssh_key.pem | cat -A
-        env:
+          touch pem.pem
+          echo $SSH_KEY64 | base64 -d > pem.pem && chmod 400 pem.pem
+          ssh-keygen -R $SERVER_IP
+        env: 
           SSH_KEY64: ${{ secrets.SSH_KEY64 }}
-
-      - name: "Test SSH Connection"
-        run: |
-          # Add extensive debugging
-          echo "Connecting to $SERVER_IP..."
-          ssh -v -o StrictHostKeyChecking=no -o ConnectTimeout=10 ubuntu@$SERVER_IP -i ssh_key.pem 'echo "Connection successful"'
 
       - name: "Docker Pull and Restart Docker"
         run: |
-          ssh ubuntu@$SERVER_IP -i ssh_key.pem 'docker pull yukeshdhakal/devopscw'
-          ssh ubuntu@$SERVER_IP -i ssh_key.pem 'docker stop yukesh-front || true'
-          ssh ubuntu@$SERVER_IP -i ssh_key.pem 'docker rm yukesh-front || true'
-          ssh ubuntu@$SERVER_IP -i ssh_key.pem 'docker run --name yukesh-front -p 80:80 -d yukeshdhakal/devopscw'
+          ssh -t ubuntu@$SERVER_IP -i pem.pem 'docker pull yukeshdhakal/devopscw'
+          ssh -t ubuntu@$SERVER_IP -i pem.pem 'docker stop yukesh-front && docker rm yukesh-front'
+          ssh -t ubuntu@$SERVER_IP -i pem.pem 'docker run --name yukesh-front -p 80:80 -d yukeshdhakal/devopscw'
