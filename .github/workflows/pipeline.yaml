@@ -32,11 +32,14 @@ jobs:
 
       - name: "Setup SSH Key for Server Access"
         run: |
-          echo "$SSH_KEY64" | base64 -d > ssh_key.pem
+          # Decode key with extra error checking
+          echo "$SSH_KEY64" | base64 -d > ssh_key.pem || { echo "Base64 decoding failed!"; exit 1; }
           chmod 400 ssh_key.pem
           ls -la ssh_key.pem
-          # Check if the file looks like a valid private key
-          head -n 1 ssh_key.pem | grep -q "BEGIN" && echo "Key starts properly" || echo "Key format may be invalid"
+          file ssh_key.pem
+          # Better key validation that shows actual content
+          echo "First 4 lines of key (checking format):"
+          head -n 4 ssh_key.pem | cat -A
         env:
           SSH_KEY64: ${{ secrets.SSH_KEY64 }}
 
