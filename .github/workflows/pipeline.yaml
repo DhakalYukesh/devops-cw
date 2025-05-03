@@ -29,17 +29,22 @@ jobs:
           echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
           touch ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
-      
+
       - name: "Setup SSH Key for Server Access"
         run: |
           echo "$SSH_KEY64" | base64 -d > ssh_key.pem
           chmod 400 ssh_key.pem
-          ls -la ssh_key.pem  # To verify file size and permissions
-        env: 
+          ls -la ssh_key.pem
+          # Check if the file looks like a valid private key
+          head -n 1 ssh_key.pem | grep -q "BEGIN" && echo "Key starts properly" || echo "Key format may be invalid"
+        env:
           SSH_KEY64: ${{ secrets.SSH_KEY64 }}
 
       - name: "Test SSH Connection"
-        run: ssh -v ubuntu@$SERVER_IP -i ssh_key.pem 'echo "Connection successful"'
+        run: |
+          # Add extensive debugging
+          echo "Connecting to $SERVER_IP..."
+          ssh -v -o StrictHostKeyChecking=no -o ConnectTimeout=10 ubuntu@$SERVER_IP -i ssh_key.pem 'echo "Connection successful"'
 
       - name: "Docker Pull and Restart Docker"
         run: |
